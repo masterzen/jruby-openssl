@@ -184,9 +184,12 @@ public class X509Cert extends RubyObject {
                 byte[] value = cert.getExtensionValue(critOid);
                 IRubyObject rValue = ASN1.decode(ossl.getConstant("ASN1"),RubyString.newString(runtime, value)).callMethod(tc,"value");
                 if(critOid.equals("2.5.29.17")) {
-                    add_extension(extFact.callMethod(tc,"create_ext", new IRubyObject[]{runtime.newString(critOid),runtime.newString(rValue.toString()),runtime.getTrue()}));
+                    X509Extensions.Extension ext = (X509Extensions.Extension)(((RubyClass)(((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("X509"))).getConstant("Extension"))).callMethod(tc,"new", new IRubyObject[]{runtime.newString(critOid),rValue,runtime.getTrue()}));
+                    add_extension(ext);
                 } else {
-                    add_extension(extFact.callMethod(tc,"create_ext", new IRubyObject[]{runtime.newString(critOid),runtime.newString(rValue.toString().substring(2)),runtime.getTrue()}));
+                    byte[] dest = new byte[value.length - 4];
+                    System.arraycopy(value, 4, dest, 0, value.length - 4);
+                    add_extension(extFact.callMethod(tc,"create_ext", new IRubyObject[]{runtime.newString(critOid),runtime.newString(new ByteList(dest, false)),runtime.getFalse()}));
                 }
             }
         }
@@ -196,10 +199,11 @@ public class X509Cert extends RubyObject {
             for(Iterator iter = ncrit.iterator();iter.hasNext();) {
                 String ncritOid = (String)iter.next();
                 byte[] value = cert.getExtensionValue(ncritOid);
-                IRubyObject rValue = ASN1.decode(ossl.getConstant("ASN1"),RubyString.newString(runtime, value)).callMethod(tc,"value");
+                IRubyObject rValue = ASN1.decode(ossl.getConstant("ASN1"),runtime.newString(new ByteList(value, false))).callMethod(tc,"value");
 
                 if(ncritOid.equals("2.5.29.17")) {
-                    add_extension(extFact.callMethod(tc,"create_ext", new IRubyObject[]{runtime.newString(ncritOid),runtime.newString(rValue.toString()),runtime.getFalse()}));
+                    X509Extensions.Extension ext = (X509Extensions.Extension)(((RubyClass)(((RubyModule)(getRuntime().getModule("OpenSSL").getConstant("X509"))).getConstant("Extension"))).callMethod(tc,"new", new IRubyObject[]{runtime.newString(ncritOid),rValue,runtime.getFalse()}));
+                    add_extension(ext);
                 } else {
                     byte[] dest = new byte[value.length - 4];
                     System.arraycopy(value, 4, dest, 0, value.length - 4);
